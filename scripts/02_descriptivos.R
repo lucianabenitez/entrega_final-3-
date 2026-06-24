@@ -3,10 +3,12 @@ library(WDI)
 library(tidyverse)
 library(ggtext)
 library(scales)
-instub <- "input"
-outstub <- "output"
+instub        <- "input"
+outstub_tab   <- "output/tablas"
+outstub_graf  <- "output/graficos"
 
-dir.create(outstub, showWarnings = FALSE)
+dir.create(outstub_tab,  recursive = TRUE, showWarnings = FALSE)
+dir.create(outstub_graf, recursive = TRUE, showWarnings = FALSE)
 
 # --- Paleta y tema estilo Our World in Data ----------------------------------
 owid_azul  <- "#4C6A9C"
@@ -70,7 +72,7 @@ tabla_general <- datos_pais |>
     .groups = "drop"
   )
 
-write_csv(tabla_general, file.path(outstub, "tabla_general.csv"))
+write_csv(tabla_general, file.path(outstub_tab, "tabla_general.csv"))
 
 
 # =============================================================================
@@ -91,7 +93,7 @@ tabla_region <- datos_pais |>
     .groups = "drop"
   )
 
-write_csv(tabla_region, file.path(outstub, "tabla_region.csv"))
+write_csv(tabla_region, file.path(outstub_tab, "tabla_region.csv"))
 
 # --- Gráfico -----------------------------------------------------------------
 max_gini <- datos_pais |> slice_max(gini, n = 1, with_ties = FALSE)
@@ -136,7 +138,7 @@ g_gini <- ggplot(datos_pais, aes(x = gini, y = pbi_percapita)) +
   )
 
 print(g_gini)
-ggsave(file.path(outstub, "grafico_gini_pbi.png"), g_gini,
+ggsave(file.path(outstub_graf, "grafico_gini_pbi.png"), g_gini,
        width = 10, height = 6, dpi = 300, bg = "white")
 
 # =============================================================================
@@ -201,7 +203,7 @@ g_gini <- ggplot(
 
 print(g_gini)
 
-ggsave(file.path(outstub, "grafico_trayectoria_gini_pbi.png"), g_gini,
+ggsave(file.path(outstub_graf, "grafico_trayectoria_gini_pbi.png"), g_gini,
        width = 10, height = 6, dpi = 300, bg = "white")
 
 # =============================================================================
@@ -261,7 +263,7 @@ g_boxplots <- ggplot(datos_long, aes(x = "", y = valor)) +
   )
 
 print(g_boxplots)
-ggsave(file.path(outstub, "boxplots_variables.png"), g_boxplots,
+ggsave(file.path(outstub_graf, "boxplots_variables.png"), g_boxplots,
        width = 10, height = 6, dpi = 300, bg = "white")
 
 # Histograma del PBI per cápita — muestra la asimetría de la distribución
@@ -282,7 +284,7 @@ g_hist_pbi <- datos_pais |>
   )
 
 print(g_hist_pbi)
-ggsave(file.path(outstub, "histograma_pbi.png"), g_hist_pbi,
+ggsave(file.path(outstub_graf, "histograma_pbi.png"), g_hist_pbi,
        width = 10, height = 5, dpi = 300, bg = "white")
 
 # -----------------------------------------------------------------------------
@@ -374,7 +376,7 @@ tabla_post <- datos_pais |>
     .groups = "drop"
   )
 
-write_csv(tabla_post, file.path(outstub, "tabla_post_limpieza.csv"))
+write_csv(tabla_post, file.path(outstub_tab, "tabla_post_limpieza.csv"))
 
 cat("\nEstadísticas PRE-tratamiento:\n");  print(tabla_general)
 cat("\nEstadísticas POST-tratamiento:\n"); print(tabla_post)
