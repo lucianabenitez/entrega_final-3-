@@ -62,7 +62,7 @@ scripts/05_regresion.R      → regresión múltiple
 
 **Paquetes necesarios:** `tidyverse`, `janitor`, `scales`, `ggtext`, `rstatix`
 
-## *Participantes*
+## Participantes
 ### Nombres y apellidos
 Luciana Benitez - 911.471
 Francisco Guerra - 903.014
