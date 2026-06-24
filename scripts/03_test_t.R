@@ -18,10 +18,10 @@ panel <- read_csv(file.path(instub, "panel_limpio.csv"),
 # ------------
 # Planteo
 # ------------
-# económico está asociado a los niveles de capital humano y estructura
-# productiva. Como paso previo a la regresión, testeamos si el PBI per cápita
-# de los 12 países de la muestra aumentó de forma significativa entre 2005 y
-# 2022.
+# El desarrollo económico de un país está asociado a los niveles de 
+# capital humano y estructura productiva. Como paso previo a la regresión, 
+# testeamos si el PBI per cápita de los 12 países de la muestra aumentó de
+# forma significativa entre 2005 y 2022.
 #
 # Usamos un test PAREADO porque cada país aparece en cada año y los datos 
 # entonces están relacionados entre si. 
@@ -49,9 +49,9 @@ datos_test <- panel |>
   filter(!is.na(pbi_2005), !is.na(pbi_2022)) |>
   mutate(diferencia = pbi_2022 - pbi_2005)
 
-# =============================================================================
+# ------------------------------
 # Descriptivos de la diferencia
-# =============================================================================
+# ------------------------------
 
 # Es sobre la diferencia que corre el test pareado
 datos_test |>
@@ -70,9 +70,9 @@ datos_test |>
     media_2022 = round(mean(pbi_2022), 1)
   )
 
-# =============================================================================
+# ------------
 # Supuestos
-# =============================================================================
+# ------------
 
 # El test t pareado asume que las DIFERENCIAS siguen una distribución
 # aproximadamente normal. Con n = 12 el TCL no alcanza, así que lo chequeamos
@@ -88,9 +88,9 @@ shapiro.test(datos_test$diferencia)
 # menos confiable; una alternativa no paramétrica sería el test de Wilcoxon
 # de rangos con signo (wilcox.test(..., paired = TRUE)).
 
-# =============================================================================
+# ----------------
 # Test t pareado
-# =============================================================================
+# ----------------
 
 # Forma (a): pasando los dos vectores con paired = TRUE
 t_pareado <- t.test(datos_test$pbi_2022, datos_test$pbi_2005,
