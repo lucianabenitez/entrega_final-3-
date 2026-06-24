@@ -15,30 +15,29 @@ dir.create(outstub_graf, recursive = TRUE, showWarnings = FALSE)
 
 panel <- read_csv(file.path(instub, "panel_limpio.csv"),
                   show_col_types = FALSE)
-
-# =============================================================================
+# ------------
 # Planteo
-# =============================================================================
-# La hipótesis principal del trabajo sostiene que el nivel de desarrollo
+# ------------
 # económico está asociado a los niveles de capital humano y estructura
 # productiva. Como paso previo a la regresión, testeamos si el PBI per cápita
 # de los 12 países de la muestra aumentó de forma significativa entre 2005 y
 # 2022.
 #
-# Usamos un test PAREADO porque cada país aparece en ambos años y las
-# observaciones no son independientes entre sí (Francia en 2005 y Francia
-# en 2022 están correlacionadas). El test pareado equivale a un t de una
-# muestra sobre las diferencias d_i = PBI_2022 - PBI_2005.
+# Usamos un test PAREADO porque cada país aparece en cada año y los datos 
+# entonces están relacionados entre si. 
+# El test pareado equivale a un t de una muestra sobre las diferencias
+# d_i = PBI_2022 - PBI_2005.
 #
+# Hipotesis del test t 
 # H0: media de las diferencias = 0  (no hubo cambio significativo)
 # H1: media de las diferencias > 0  (hubo crecimiento significativo)
 #
 # Usamos H1 unilateral (mayor que) porque la hipótesis de trabajo predice
 # crecimiento, no simplemente cambio.
 
-# =============================================================================
+# --------------------------
 # Preparación de los datos
-# =============================================================================
+# --------------------------
 
 # Armamos la base ancha: una fila por país, columnas para cada año
 datos_test <- panel |>
@@ -152,3 +151,4 @@ g_test <- ggplot(datos_grafico,
 print(g_test)
 ggsave(file.path(outstub_graf, "grafico_test_t.png"), g_test,
        width = 10, height = 6, dpi = 300, bg = "white")
+

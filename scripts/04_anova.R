@@ -1,11 +1,8 @@
-# =============================================================================
 # 04_anova.R
 # ANOVA: ¿existen diferencias significativas en el PBI per cápita entre regiones?
-# =============================================================================
 
 library(tidyverse)
 library(scales)
-library(rstatix)
 
 instub        <- "input"
 outstub_tab   <- "output/tablas"
@@ -17,9 +14,9 @@ dir.create(outstub_graf, recursive = TRUE, showWarnings = FALSE)
 panel <- read_csv(file.path(instub, "panel_limpio.csv"),
                   show_col_types = FALSE)
 
-# =============================================================================
+-----------
 # Planteo
-# =============================================================================
+-----------
 # La hipótesis secundaria del trabajo sostiene que existen diferencias
 # significativas en el PBI per cápita entre regiones del mundo.
 #
@@ -35,9 +32,9 @@ panel <- read_csv(file.path(instub, "panel_limpio.csv"),
 # El estadístico F compara la varianza ENTRE grupos vs DENTRO de grupos.
 # F grande -> los grupos son muy distintos entre sí -> tiende a rechazar H0.
 
-# =============================================================================
+# --------------------------
 # Preparación de los datos
-# =============================================================================
+# --------------------------
 
 # Usamos el último año disponible por país (2022) para una foto transversal
 datos_anova <- panel |>
@@ -101,6 +98,26 @@ datos_anova |>
 modelo_anova <- aov(pbi_percapita ~ region, data = datos_anova)
 summary(modelo_anova)
 
+# Tabla resumen del ANOVA
+f_val  <- summary(modelo_anova)[[1]]$"F value"[1]
+p_val  <- summary(modelo_anova)[[1]]$"Pr(>F)"[1]
+df_reg <- summary(modelo_anova)[[1]]$Df[1]
+df_res <- summary(modelo_anova)[[1]]$Df[2]
+
+tabla_anova <- tibble(
+  Estadistico          = c("N observaciones", "N grupos (regiones)",
+                           "GL entre grupos", "GL residuales",
+                           "F", "P-valor", "Conclusion"),
+  Valor                = c(nrow(datos_anova), nlevels(datos_anova$region),
+                           df_reg, df_res,
+                           round(f_val, 3), round(p_val, 4),
+                           ifelse(p_val < 0.05,
+                                  "Se rechaza H0 (diferencias significativas)",
+                                  "No se rechaza H0 (sin diferencias significativas)"))
+)
+
+knitr::kable(tabla_anova, format = "simple")
+
 # Interpretación del summary():
 # - Df        : grados de libertad (entre grupos = k-1, residuales = n-k)
 # - F value   : estadístico F
@@ -110,68 +127,21 @@ summary(modelo_anova)
 # Para eso usamos comparaciones múltiples post-hoc.
 
 # =============================================================================
-# ANOVA de Welch (robusto a heterocedasticidad)
-# =============================================================================
-
-oneway.test(pbi_percapita ~ region, data = datos_anova)
-
-# Conviene reportar el de Welch si los desvíos entre grupos son muy distintos.
-
-# =============================================================================
-# Comparaciones post-hoc: Games-Howell
+# Comparaciones post-hoc: Tukey HSD
 # =============================================================================
 # Si rechazamos H0, necesitamos saber ENTRE QUÉ regiones hay diferencias.
-# Usamos Games-Howell (del paquete {rstatix}): es la versión robusta de Tukey
-# para cuando no se cumple homocedasticidad. Controla el error tipo I
-# familywise.
+# Usamos Tukey HSD (base R): controla el error tipo I familywise.
+#
+# Limitación: Asia Oriental tiene un solo país (China), por lo que las
+# comparaciones que involucren esa región deben interpretarse con cautela.
 
-posthoc <- datos_anova |>
-  games_howell_test(pbi_percapita ~ region)
-
-posthoc
+posthoc <- TukeyHSD(modelo_anova)
+print(posthoc)
 
 # Cada fila muestra:
-# - group1, group2 : las dos regiones comparadas
-# - estimate       : diferencia de medias
-# - conf.low/high  : IC 95% ajustado
-# - p.adj          : p-valor ajustado por múltiples comparaciones
+# - diff          : diferencia de medias entre los dos grupos
+# - lwr / upr     : IC 95%
+# - p adj         : p-valor ajustado por múltiples comparaciones
 #
-# Si p.adj < 0.05 -> esas dos regiones difieren significativamente.
+# Si p adj < 0.05 -> esas dos regiones difieren significativamente.
 
-# =============================================================================
-# Gráfico: PBI per cápita por región
-# =============================================================================
-
-g_anova <- ggplot(datos_anova,
-                  aes(x = reorder(region, pbi_percapita, FUN = median),
-                      y = pbi_percapita)) +
-  geom_boxplot(aes(fill = region), alpha = 0.5, outlier.shape = NA) +
-  geom_jitter(aes(colour = region), width = 0.15, size = 3, alpha = 0.8) +
-  geom_text(aes(label = pais_nombre), hjust = -0.15, size = 2.8,
-            colour = "#5b5b5b") +
-  scale_y_continuous(labels = label_dollar(prefix = "USD ", big.mark = ".",
-                                            decimal.mark = ",", accuracy = 1)) +
-  scale_fill_brewer(palette  = "Set1") +
-  scale_colour_brewer(palette = "Set1") +
-  coord_flip() +
-  labs(
-    title    = "El PBI per cápita difiere marcadamente entre regiones",
-    subtitle = "Distribución del PBI per cápita por región. Año 2022. USD constantes de 2015.",
-    caption  = "Fuente: Banco Mundial (WDI)",
-    x = NULL, y = "PBI per cápita (USD)"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position    = "none",
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor   = element_blank(),
-    axis.text          = element_text(colour = "#5b5b5b"),
-    axis.title.x       = element_text(colour = "#5b5b5b", size = 10),
-    plot.title         = element_text(face = "bold", size = 14),
-    plot.subtitle      = element_text(colour = "#5b5b5b", size = 11),
-    plot.caption       = element_text(colour = "#8a8a8a", size = 9, hjust = 0)
-  )
-
-print(g_anova)
-ggsave(file.path(outstub_graf, "grafico_anova.png"), g_anova,
-       width = 10, height = 6, dpi = 300, bg = "white")
